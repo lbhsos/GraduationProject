@@ -27,7 +27,7 @@ sys_words = ["용량/Noun","다운/Noun","앱/Noun","실행/Noun","설치/Noun"]
 dissatis_words = ["광고/Noun","신고/Noun","채팅/Noun","욕/Noun","처벌/Noun"] #불만
 categorySubject= pay_words + id_words + config_words + production_words + character_words + sys_words + dissatis_words
 allCategoryWordsLength=len(categorySubject) 
-d_length=300 #카테고리 분류 할 리뷰 개수
+tempReviewLength=300 #카테고리 분류 할 리뷰 개수
 
 
 def tokenize(doc):
@@ -48,14 +48,21 @@ def readRawData(filename):
         print('loading data')
         dataSplitedByTab = []
         tokenizedReviews = []
-        reviewSentence = []
+        reviewSentencesWithInfo = []
         for line in f.read().splitlines():
             data_temp = removeEmoji().sub(r'', line)
             dataSplitedByTab.append(data_temp.split('\t'))   
         print('pos tagging to token')
-        tokenizedReviews = [(tokenize(row[1])) for row in dataSplitedByTab[0:]]
-        reviewSentence =[(row[1]) for row in dataSplitedByTab[0:]]
-    return (tokenizedReviews, reviewSentence)
+#        tokenizedReviews = [(tokenize(row[1])) for row in dataSplitedByTab[0:]]
+#        reviewSentencesWithInfo =[(row[1]) for row in dataSplitedByTab[0:]]
+        tokenizedReviews = []
+        reviewSentencesWithInfo = []
+        for row in dataSplitedByTab[0:] :
+            row_1 = row[1]
+            tokenizedReviews.append(tokenize(row_1))
+            reviewSentencesWithInfo.append(row_1)
+            
+    return (tokenizedReviews, reviewSentencesWithInfo)
 
 def removeNounVerbAdj(tokenizedReviews):
 #    tokens = [t for d in tokenizedReview for t in d]
@@ -116,174 +123,125 @@ def createWeightingMatrix(eucliDistancMatrix): #정규 분포 사용하여 가�
         for k in range(matrixLength):
             weightingMatrix.iloc[i,j]-=tuneweight
         sum=0
-  #  df_exp1 이 가중치행렬
+
     return weightingMatrix
 
-def term_document_matrix(content):
+def createTermDocumentMatrix(reviewSentencesWithInfo):
     print("TDM 배열")
-    content = pd.DataFrame(content) 
-    content.columns=["content"] 
-    categ_data = pd.DataFrame(content)
-    return categ_data
+    reviewSentencesWithInfo = pd.DataFrame(reviewSentencesWithInfo) 
+    reviewSentencesWithInfo.columns=["content"] 
+    reviewSentences = pd.DataFrame(reviewSentencesWithInfo)
+    return reviewSentences
 
 ##내적 구하는 행렬
-def compute_inner_product(data, df_exp1):
-    TDM=[[0 for col in range(60)] for row in range(d_length)] 
-    w=[0]*60
+def computeInnerProduct(tokenizedReviews, weightingMatrix):
+    TDM=[[0 for col in range(60)] for row in range(tempReviewLength)] 
+    wordToken=[0]*60
+    minimumTokenLength=5
     #f1-f6 col, 각 리뷰 row
-    tdm_sum=[[0 for col in range(allCategoryWordsLength+1)] for row in range(d_length)]
-    for i in range(d_length):
-        df_string=str(data[i])
-        w=df_string.split(', ')
+    sumOfCateBranchArr=[[0 for col in range(allCategoryWordsLength+1)] for row in range(tempReviewLength)]
+    for i in range(tempReviewLength):
+        tokenizedReview=str(tokenizedReviews[i])
+        wordToken=tokenizedReview.split(', ')
         ##df마지막에 length추가하기 TODO      
-        token_length=len(w)
-        if(token_length>=60):
-            token_length=60
-        df_flag=[0]*(allCategoryWordsLength)
-        if(token_length>5):
-            for j in range(token_length):
-                tempWord=w[j].replace("'","").replace("[","").replace("]","")
+        tokenLength=len(wordToken)
+        if(tokenLength>=60):
+            tokenLength=60
+        flagForAdvent=[0]*(allCategoryWordsLength)
+        if(tokenLength>minimumTokenLength):
+            for j in range(tokenLength):
+                tempWord=wordToken[j].replace("'","").replace("[","").replace("]","")
                 ##단어 존재하는지 확인
-                for k in range(allCategoryWordsLength): # 이 for문 설명좀 해쥬세유,,
+                for eachCategoryWord in range(allCategoryWordsLength):
                     try:
-                        df_value=df_exp1.loc[tempWord,categorySubject[k]]
+                        value=weightingMatrix.loc[tempWord,categorySubject[eachCategoryWord]]
                         #1로배정
                     except KeyError as e:
                         TDM[i][j]=0
                     else:
-                        if(df_flag[k]==1): # 
-                            df_value=0
+                        if(flagForAdvent[eachCategoryWord]==1): # 
+                            value=0
                             continue
                         else:
-                            df_flag[k]=1
-                            TDM[i][j]=1 ##몇번 나왔는지까지 
-                            tdm_sum[i][k]+=(df_value) 
-                            df_value=0
-                df_flag=[0 for m in range(allCategoryWordsLength)]
+                            flagForAdvent[eachCategoryWord]=1
+                            TDM[i][j]=1 ##only count one
+                            sumOfCateBranchArr[i][eachCategoryWord]+=(value) 
+                            value=0
+                flagForAdvent=[0 for m in range(allCategoryWordsLength)] ##initialize
         else:##TOO SHORT
-            tdm_sum[i][allCategoryWordsLength]=1000
-    return tdm_sum
-    
-def compute_TDM_sum(tdm_sum):
-    TDM_SUM=[[0 for col in range(9)] for row in range(d_length)]
-    temp_sum=[0]*9
-    for line in range(d_length):
-        for col in range(allCategoryWordsLength):
-            if ((col>=0 and col<=4)): #결제
-                temp_sum[0]+=tdm_sum[line][col]
-            elif ((col>=5 and col<=9)): #계정
-                temp_sum[1]+=tdm_sum[line][col]
-            elif ((col>=10 and col<=14)): #서버
-                temp_sum[2]+=tdm_sum[line][col]
-            elif ((col>=15 and col<=19)): #구성
-                temp_sum[3]+=tdm_sum[line][col]
-            elif ((col>=20 and col<=24)): #연
-                temp_sum[4]+=tdm_sum[line][col]
-            elif ((col>=25 and col<=29)): #캐릭터
-                temp_sum[5]+=tdm_sum[line][col]
-            elif ((col>=30 and col<=34)): #시스템
-                temp_sum[6]+=tdm_sum[line][col]
-            elif ((col>=35 and col<=39)): #기타
-                temp_sum[7]+=tdm_sum[line][col]
-            elif ((col==40)): #TOO_SHorT
-                temp_sum[8]+=tdm_sum[line][col]          
-        for i in range(0, 9):
-            TDM_SUM[line][i]=temp_sum[i]
-        temp_sum=[0]*9  
-    return TDM_SUM
+            sumOfCateBranchArr[i][allCategoryWordsLength]=1000
+    return sumOfCateBranchArr
 
-def classification(TDM_SUM): 
+
+
+def getSentenceCategorySum(sumOfCateBranchArr):
+    sumOfCategory=[[0 for col in range(9)] for row in range(tempReviewLength)]
+ #   tempSum=[0]*9
+    for line in range(tempReviewLength):
+        for i in range(0,9) :
+            sumOfCategory[line][i] += sum(sumOfCateBranchArr[line][i*5: min((i+1)*5,41)])
+        
+       
+#        tempSum=[0]*9  
+    return sumOfCategory
+
+def classificate(sumOfCategory): 
     print("카테고리 max으로 분류하기")
-    categ_arr=[]
-    categ_arr = categ_data.as_matrix()
-    f=[k for k in range(9)]
+    reviewSentencesAsArr=[]
+    reviewSentencesAsArr = reviewSentences.as_matrix()
+    categorizedReviews=[k for k in range(9)]
     for col in range(9):
-        f[col]=[]
-    cate_result=[]
-    for i in range(d_length):
-        if (max(TDM_SUM[i]) != 0): #짧지않다
-            desc = copy.deepcopy(TDM_SUM)
+        categorizedReviews[col]=[]
+    
+    for i in range(tempReviewLength):
+        if (max(sumOfCategory[i]) != 0): #짧지않다
+            desc = copy.deepcopy(sumOfCategory)
             desc[i].sort(reverse=True)#내림차순
-            #임계값
             threshold=0.35
             max_score=desc[i][0]
-            cate_result=[]
-            max_index=TDM_SUM[i].index(desc[i][0])
-            if max_index==0 :
-                categ_result = "결제"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 1:
-        
-                categ_result = "계정"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 2:
-          
-                categ_result = "서버"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 3:
-        
-                categ_result = "구성"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 4:
-   
-                categ_result = "연출"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 5:
-       
-                categ_result = "캐릭터"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 6:
-          
-                categ_result = "시스템"
-                f[max_index].append([categ_arr[i]])
-            elif max_index== 7:
-          
-                categ_result = "기타"
-                f[max_index].append([categ_arr[i]])
-            elif max_index == 8:
-
-                categ_result = "TOO_SHORT"
-                f[max_index].append([categ_arr[i]])
-            cate_result.append(categ_result)
-            
+            finalCategory=[]
+            max_index=sumOfCategory[i].index(desc[i][0])
+            categoryResult=findCategoryByMaxIndex(categorizedReviews,max_index, reviewSentencesAsArr,i)
+            finalCategory.append(categoryResult)
             for col in range(1,2):   
-                ##0이 중복
                 if((max_score-desc[i][col]) <= threshold): 
-                    max_index=TDM_SUM[i].index(desc[i][col])
-                    if max_index==0 :
-                        categ_result = "결제"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 1:
-                        categ_result = "계정"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 2:
-                        categ_result = "서버"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 3:
-                        categ_result = "구성"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 4:
-                        categ_result = "연출"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 5:
-                        categ_result = "캐릭터"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 6:
-                  
-                        categ_result = "시스템"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index== 7:
-                  
-                        categ_result = "기타"
-                        f[max_index].append([categ_arr[i]])
-                    elif max_index == 8:
-                    
-                        categ_result = "TOO_SHORT"
-                        f[max_index].append([categ_arr[i]])
-                    cate_result.append(categ_result)
+                    max_index=sumOfCategory[i].index(desc[i][col])
+                    finalCategory.append(categoryResult)
+                    categoryResult=findCategoryByMaxIndex(categorizedReviews,max_index, reviewSentencesAsArr,i)
+                    finalCategory.append(categoryResult)
          #   print(i,': ',categ_arr[i],' ',str(cate_result))
-    return f
-     
+    return categorizedReviews
+
+def findCategoryByMaxIndex(categorizedReviews,max_index,reviewSentencesAsArr,i):
+    if max_index==0 :
+        categoryResult = "결제"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 1:
+        categoryResult = "계정"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 2:
+        categoryResult = "서버"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 3:
+        categoryResult = "구성"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 4:
+        categoryResult = "연출"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 5:
+        categoryResult = "캐릭터"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 6:
+        categoryResult = "시스템"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index== 7:
+        categoryResult = "기타"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    elif max_index == 8:
+        categoryResult = "TOO_SHORT"
+        categorizedReviews[max_index].append([reviewSentencesAsArr[i]])
+    return categoryResult
+
 def result(f):
     result_review = []
     for i in range(9):
@@ -296,16 +254,16 @@ def print_result(result_review):
         print("len", len(result_review[i]))
 
 if __name__ == '__main__':
-    tokenizedReviews, content= readRawData('./mm.txt') #파일 읽어서 데이터 로딩
+    tokenizedReviews, reviewSentencesWithInfo = readRawData('./mm.txt') #파일 읽어서 데이터 로딩
     preprocessedTokens = removeNounVerbAdj(tokenizedReviews) #토큰 전처리
     word2vecModel = createWord2VecModel(preprocessedTokens) #워드투벡 모델 생성
     wordVectorMatirx = createWordVectorMatrix(word2vecModel) #워드투벡 결과로 나온 단어벡터 행렬                  
     eucliDistancMatrix = createEuclidianDistanceMatrix(wordVectorMatirx) #유클리디안 거리 이용하여 거리행렬로 변환
     weightingMatrix = createWeightingMatrix(eucliDistancMatrix) #정규 분포 사용해서 가중치행렬로 변환
-    categ_data = term_document_matrix(content) #TDM 구축
-    tdm_sum = compute_inner_product(tokenizedReviews, weightingMatrix) #내적
-    TDM_SUM = compute_TDM_sum(tdm_sum) #TDM 합 구하기
-    f=classification(TDM_SUM) #카테고리 분류
-    result_review = result(f)
+    reviewSentences = createTermDocumentMatrix(reviewSentencesWithInfo) #TDM 구축
+    sumOfCateBranchArr = computeInnerProduct(tokenizedReviews, weightingMatrix) #내적
+    sumOfCategory = getSentenceCategorySum(sumOfCateBranchArr) #TDM 합 구하기
+    categorizedReviews=classificate(sumOfCategory) #카테고리 분류
+    result_review = result(categorizedReviews)
     print_result(result_review)
     
