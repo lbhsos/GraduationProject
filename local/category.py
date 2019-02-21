@@ -181,56 +181,6 @@ def save_vocab(filename, tokens):
             f.write('%s, ' % v)
          
 
-            
-'''
-f=[k for k in range(10)]
-for col in range(10):
-    f[col]=[]
-
-def cate(TDM_SUM,desc,i,col,text):
-    max_index=TDM_SUM[i].index(desc[i][col])
-    #categ_max[i]=max_index
-    if max_index==0 :
-        categ_result = "결제"
-        f[max_index].append(text)
-    elif max_index == 1:
-
-        categ_result = "계정"
-        f[max_index].append(text)
-    elif max_index == 2:
-  
-        categ_result = "서버"
-        f[max_index].append(text)
-    elif max_index == 3:
-
-        categ_result = "구성"
-        f[max_index].append(text)
-    elif max_index == 4:
-   
-        categ_result = "연출"
-        f[max_index].append(text)
-    elif max_index == 5:
-   
-        categ_result = "캐릭터"
-        f[max_index].append(text)
-    elif max_index == 6:
-  
-        categ_result = "아이템"
-        f[max_index].append(text)
-    elif max_index== 7:
-  
-        categ_result = "시스템"
-        f[max_index].append(text)
-    elif max_index == 8:
-    
-        categ_result = "기타"
-        f[max_index].append(text)
-    elif max_index == 9:
-        categ_result = "TOO_SHORT"
-        f[max_index].append(text)
-    return categ_result
-
-'''
 if __name__ == '__main__':
 
     data = read_raw_data('mm.txt')
