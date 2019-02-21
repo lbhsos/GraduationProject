@@ -18,14 +18,16 @@ import numpy as np
 import copy 
 
 category = ['결제', '계정', '서버','구성','연출','캐릭터','시스템','기타']
-pay_words = ["결제/Noun","구입/Noun","구매/Noun","현질/Noun","환불/Noun"] #결제
-id_words = ['계정/Noun','아이디/Noun','연동/Noun','구글/Noun','로그인/Noun'] #계정
-config_words = ["버그/Noun","서버/Noun","접속/Noun","로딩/Noun","렉/Noun"] #구성, 기획
-production_words = ["배경/Noun","그래픽/Noun","퀄리티/Noun","사운드/Noun","디자인/Noun"] #연출, 액션
-character_words = ["스킬/Noun","너프/Noun","영웅/Noun","캐릭터/Noun","캐릭/Noun"] #캐릭터, 체력
-sys_words = ["용량/Noun","다운/Noun","앱/Noun","실행/Noun","설치/Noun"] #시스템
-dissatis_words = ["광고/Noun","신고/Noun","채팅/Noun","욕/Noun","처벌/Noun"] #불만
-categorySubject= pay_words + id_words + config_words + production_words + character_words + sys_words + dissatis_words
+pay_words = ["결제/Noun","구입/Noun","구매/Noun","현질/Noun","환불/Noun"] #결제 0
+id_words = ['계정/Noun','아이디/Noun','연동/Noun','구글/Noun','로그인/Noun'] #계정 1 
+server_words = ["버그/Noun","서버/Noun","접속/Noun","로딩/Noun","렉/Noun"] #서버 2
+config_words = ["맵/Noun","이벤트/Noun","퀘스트/Noun","스테이지/Noun","미션/Noun"] #구성, 기획 3 
+production_words = ["배경/Noun","그래픽/Noun","퀄리티/Noun","사운드/Noun","디자인/Noun"] #연출, 액션 4 
+character_words = ["스킬/Noun","너프/Noun","영웅/Noun","캐릭터/Noun","캐릭/Noun"] #캐릭터, 체력 5
+sys_words = ["용량/Noun","다운/Noun","앱/Noun","실행/Noun","설치/Noun"] #시스템 6
+dissatis_words = ["광고/Noun","신고/Noun","채팅/Noun","욕/Noun","처벌/Noun"] #불만 7
+
+categorySubject= pay_words + id_words + server_words +config_words + production_words + character_words + sys_words + dissatis_words
 allCategoryWordsLength=len(categorySubject) 
 tempReviewLength=300 #카테고리 분류 할 리뷰 개수
 
