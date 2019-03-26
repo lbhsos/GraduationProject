@@ -38,7 +38,7 @@
 #### We categorized game reviews as payment, account, configuration, server, system, directing, character, etc.
 #### Each category contains about nine sub-words that can represent categories.
 #### To find the categories, we internally weighted the matrix and the TDM document
-#### fileName: [local]-refactoring.py
+#### fileName: [local]-refactoringCategory.py
 
 
 
