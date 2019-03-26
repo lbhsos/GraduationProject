@@ -269,3 +269,13 @@ if __name__ == '__main__':
     result_review = result(categorizedReviews)
     print_result(result_review)
     
+    '''
+    df_exp1 = weighted_matrix(df_theme) #정규 분포 사용해서 가중치행렬로 변환
+    categ_data = term_document_matrix(content) #TDM 구축
+    tdm_sum = compute_inner_product(data, df_exp1) #내적
+    TDM_SUM = compute_TDM_sum(tdm_sum) #TDM 합 구하기
+    f,categ_arr, cate_result=classification(TDM_SUM) #카테고리 분류
+    result_review = result(f)
+    print_result(result_review)
+    '''
+    
