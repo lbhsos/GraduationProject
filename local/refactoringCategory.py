@@ -68,7 +68,6 @@ def readRawData(filename):
 
 def removeNounVerbAdj(tokenizedReviews):
 #    tokens = [t for d in tokenizedReview for t in d]
-    print("토큰 전처리")
    # data_length=len(tokenizedReview)
     preprocessedTokens=[]
     
@@ -108,10 +107,11 @@ def createEuclidianDistanceMatrix(wordVectorMatirx) :
 
 def createWeightingMatrix(eucliDistancMatrix): #정규 분포 사용하여 가중치 행렬로 변환
     matrixOnlyWithSubject=eucliDistancMatrix[categorySubject]
-        # 새로 카테고리 배열들 합 구하기스
+    # 새로 카테고리 배열들 합 구하기스
     print("가중치 행렬 계산")
     matrixSquare=np.power(matrixOnlyWithSubject, 2)
-    matrixSquare.loc['temp'] = [0 for n in range(allCategoryWordsLength)]#temp 행 추가
+    #temp행 추가 
+    matrixSquare.loc['temp'] = [0 for n in range(allCategoryWordsLength)]
     exponentialMatrix=np.exp(-matrixSquare/100)
     weightingMatrix =  exponentialMatrix.drop("temp")
     matrixSquare =  matrixSquare.drop("temp", axis = 0)
@@ -178,13 +178,9 @@ def computeInnerProduct(tokenizedReviews, weightingMatrix):
 
 def getSentenceCategorySum(sumOfCateBranchArr):
     sumOfCategory=[[0 for col in range(9)] for row in range(tempReviewLength)]
- #   tempSum=[0]*9
     for line in range(tempReviewLength):
         for i in range(0,9) :
             sumOfCategory[line][i] += sum(sumOfCateBranchArr[line][i*5: min((i+1)*5,41)])
-        
-       
-#        tempSum=[0]*9  
     return sumOfCategory
 
 def classificate(sumOfCategory): 
@@ -196,9 +192,9 @@ def classificate(sumOfCategory):
         categorizedReviews[col]=[]
     
     for i in range(tempReviewLength):
-        if (max(sumOfCategory[i]) != 0): #짧지않다
+        if (max(sumOfCategory[i]) != 0):
             desc = copy.deepcopy(sumOfCategory)
-            desc[i].sort(reverse=True)#내림차순
+            desc[i].sort(reverse=True)
             threshold=0.35
             max_score=desc[i][0]
             finalCategory=[]
@@ -211,7 +207,6 @@ def classificate(sumOfCategory):
                     finalCategory.append(categoryResult)
                     categoryResult=findCategoryByMaxIndex(categorizedReviews,max_index, reviewSentencesAsArr,i)
                     finalCategory.append(categoryResult)
-         #   print(i,': ',categ_arr[i],' ',str(cate_result))
     return categorizedReviews
 
 def findCategoryByMaxIndex(categorizedReviews,max_index,reviewSentencesAsArr,i):
